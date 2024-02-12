@@ -1,105 +1,164 @@
-const canvas = document.getElementById("myCanvas");
+// Alles was funktioniert hier rein.
+
+const canvas = document.getElementById("gameCenter");
 const ctx = canvas.getContext("2d");
+
+var score = document.getElementById("score");
+
+let player = {
+    x: 0,
+    y: 220,
+    speed: 3,
+    playerSize: 100,
+    gravity: 2.5,
+    jumpPower: 3,
+    jumpheight: 150,
+    jumping: false
+}
+
+let coin = {
+    x: 0,
+    y: 0,
+    size: 10,
+    isTaken: false
+}
 
 let rightPressed = false;
 let leftPressed = false;
 let upPressed = false;
 let downPressed = false;
+let spacePressed = false;
+let jumplock = false;
+let point = false;
+let coinCount = 0;
+
+
+// var keyW = 87, keyA = 65, keyS = 83, keyD = 68;
 
 document.addEventListener("keydown", keyDownHandler, false);
 document.addEventListener("keyup", keyUpHandler, false);
 
-let x = 20
-let y = 20
-let speed = 3
-const rectsize = 50;
 
-function jump(e) {
-  if(e.key === "Space") {
-    y += 10;
-  }
+
+function drawPlayer() {
+    var image = new Image();
+    image.src = '../images/testing char.png';
+
+    image.onload = function() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, player.x, player.y, player.playerSize,  player.playerSize,)
+        drawCoin();
+    }
 }
 
+function jump() {
+    ctx.clearRect(player.x, player.y, player.rectsize, player.rectsize);
+    
+    if (player.jumping && player.y > player.jumpheight) {
+        player.y -= player.jumpPower;
+        jumplock = true;
+    } else if (player.y < 220 && !player.jumping) {
+        player.y += player.gravity ;
+    } else {
+        jumpblock = false;
+        player.jumping = false;
+    }
+  }
+
+function wallCollision() {
+    if (player.y + player.playerSize >= canvas.height) { 
+        player.y = canvas.height - player.playerSize;
+    }
+    else if (player.y <= 0) {
+        player.y = 0;
+    }
+    if (player.x + player.playerSize >= canvas.width) { 
+        player.x = canvas.width - player.playerSize;
+    }
+    else if (player.x <= 0) {
+        player.x = 0;
+    }
+}
+
+
 function keyDownHandler(e) {
-    if (e.key === "Right" || e.key === "ArrowRight") {
+    if (e.key === "d" || e.key === "ArrowRight") {
       rightPressed = true;
-    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+    } else if (e.key === "a" || e.key === "ArrowLeft") {
       leftPressed = true;
-    } else if(e.key == "Up" || e.key === "ArrowUp"){
+    } else if(e.key == "w" || e.key === "ArrowUp"){
         upPressed = true;
-    } else if (e.key == "Down" || e.key === "ArrowDown"){
+    } else if (e.key == "s" || e.key === "ArrowDown"){
         downPressed = true;
+    } else if (e.key === " "){
+      spacePressed = true;
     }
   }
   
   function keyUpHandler(e) {
-    if (e.key === "Right" || e.key === "ArrowRight") {
+    if (e.key === "d" || e.key === "ArrowRight") {
       rightPressed = false;
-    } else if (e.key === "Left" || e.key === "ArrowLeft") {
+    } else if (e.key === "a" || e.key === "ArrowLeft") {
       leftPressed = false;
-    } else if(e.key == "Up" || e.key === "ArrowUp"){
+    } else if(e.key == "w" || e.key === "ArrowUp"){
         upPressed = false;
-    } else if (e.key == "Down" || e.key === "ArrowDown"){
+    } else if (e.key == "s" || e.key === "ArrowDown"){
         downPressed = false;
-    } 
+    } else if (e.key == " "){
+      spacePressed = false;
+    }
   }
 
-  function wallcollision() {
-    if (y + rectsize >= canvas.height) { // Untere Kollision
-        y = canvas.height - rectsize; // Korrektur: Richtung umkehren und Geschwindigkeit subtrahieren
+  function checkinput() {
+    if(rightPressed){
+        player.x =+ Math.min(player.x + player.speed, canvas.width)
     }
-    else if (y <= 0) { // Obere Kollision
-        y = 0; // Korrektur: Setzen Sie y auf den Grenzwert
+    else if(leftPressed){
+        player.x =+ Math.min(player.x - player.speed, canvas.width)
     }
-    if (x + rectsize >= canvas.width) { // Rechte Kollision
-        x = canvas.width - rectsize; // Korrektur: Richtung umkehren und Geschwindigkeit subtrahieren
-    }
-    else if (x <= 0) { // Linke Kollision
-        x = 0; // Korrektur: Setzen Sie x auf den Grenzwert
-    }
-}  
+    if(spacePressed){
+        player.jumping = true
+      }
+      jump()
+      coinCollision();
+}
 
-function testrect(){
+function drawCoin() {
+    // var coinImg = new Image();
+    // coinImg.src = '../images/coin.png'
+
     ctx.beginPath();
-    ctx.rect(x, y, rectsize, rectsize);
-    ctx.fillStyle = "#FF0000";
+    ctx.arc(coin.x, coin.y, coin.size, 0, Math.PI * 2);
+    ctx.fillStyle = "yellow";
     ctx.fill();
     ctx.closePath();
 }
-
-function draw_point(){
-  ctx.beginPath();
-  ctx.arc((Math.random()*canvas.width), (Math.random()*canvas.height), 10, 0, Math.PI * 2);
-  ctx.fillStyle = "#FFFFFF";
-  ctx.fill();
-  ctx.closePath();
-}
-
-
-function checkinput(){
-    if(rightPressed){
-        x =+ Math.min(x + speed, canvas.width)
-    }
-    if(leftPressed){
-        x =+ Math.min(x - speed, canvas.width)
-    }
-    if(upPressed){
-        y =+ Math.min(y - speed, canvas.height)
-    }
-    if(downPressed){
-        y =+ Math.min(y + speed, canvas.height)
+function spawnCoin() {
+    if(!coin.isTaken) {
+        coin.x = Math.random() * (canvas.width - 2 * coin.size) + coin.size;
+        coin.y = Math.random() * (canvas.height - 2 * coin.size) + coin.size;
     }
 }
 
-function update() {
-    ctx.clearRect(x, y, canvas.width, canvas.height)
+function coinCollision() {
+    if (
+        player.x < coin.x + coin.size &&
+        player.x + player.playerSize > coin.x &&
+        player.y < coin.y + coin.size &&
+        player.y + player.playerSize > coin.y
+    ) {
+        coin.isTaken = true;
+        coinCount++;
+        spawnCoin();
+        score.innerHTML = "Your Coins: " + coinCount; 
+    }
+}
+
+function startGame() {
+    spawnCoin();
     checkinput();
-    wallcollision()
-    testrect();
-    draw_point();
-    jump();
-  }
+    wallCollision();
+    drawPlayer();
+}
 
-
-setInterval(update, 10);
-  
+setInterval(startGame, 10);
